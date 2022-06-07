@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Webpack App</title>
+    </head>
+    <body>
+        <h1>Make some tasks!</h1>
+
+        <ul>
+        </ul>
+
+        <form id="add-task-form">
+            <input type="text" name="title" placeholder="Title" required/>
+            <select name="color" required>
+                <option value="">[Color]</option>
+                <option value="red">Red</option>
+                <option value="green">Green</option>
+                <option value="blue">Blue</option>
+            </select>
+            <br/>
+            <input type="text" name="description" placeholder="Description" required/>
+            <br/>
+            <p hidden style="color: red;"></p>
+            <br/>
+            <input type="submit" value="Add task"/>
+        </form>
+    </body>
+    
+</html>
