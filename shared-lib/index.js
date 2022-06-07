@@ -6,6 +6,6 @@ function validateRequest(request) {
 }
 exports.validateRequest = validateRequest;
 function validateResponse(response) {
-    return typeof response === 'object';
+    return true;
 }
 exports.validateResponse = validateResponse;

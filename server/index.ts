@@ -1,5 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { Request, Response, validateRequest, validateResponse } from 'simple-rpc-over-http-shared-lib';
+import { Request, Response, validateRequest } from 'simple-rpc-over-http-shared-lib';
 
 export type SessionHook = (session?: any) => Promise<void>;
 
@@ -45,9 +45,6 @@ async function handleRpc(request: Readonly<Request>, config: Readonly<Config>): 
 
     try {
         const response = await service[request.method](...request.parameters);
-        if (!validateResponse(response)) {
-            throw new Error('Invalid response format');
-        }
         return {
             details: response
         };

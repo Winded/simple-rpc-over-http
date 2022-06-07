@@ -15,5 +15,5 @@ export function validateRequest(request: any): request is Request {
 }
 
 export function validateResponse(response: any): response is Response {
-    return typeof response === 'object';
+    return true;
 }

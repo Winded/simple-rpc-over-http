@@ -26,9 +26,6 @@ async function handleRpc(request, config) {
     }
     try {
         const response = await service[request.method](...request.parameters);
-        if (!(0, simple_rpc_over_http_shared_lib_1.validateResponse)(response)) {
-            throw new Error('Invalid response format');
-        }
         return {
             details: response
         };
