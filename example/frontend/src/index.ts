@@ -1,6 +1,6 @@
 import { buildService } from 'simple-rpc-over-http-client';
 import { Notes } from 'simple-rpc-over-http-example-shared';
-import { distinct, map, Subject } from 'rxjs';
+import { distinct, map, Observable, Subject } from 'rxjs';
 
 import './style.css';
 import produce from 'immer';
@@ -37,56 +37,79 @@ function onError(error: any) {
     }));
 }
 
-function configureNoteList() {
-    const list = document.querySelector('ul');
+function createNoteElement(note: Notes.Note, onDelete: () => void): HTMLElement {
+    const element = document.createElement('div');
+    element.classList.add('note');
+    element.innerHTML = `
+        <div class="title"></div>
+        <div class="delete-button">
+            <a href="javascript:void(0)">X</a>
+        </div>
+        <div class="description"></div>
+    `;
 
-    stateChange.pipe(
-        map(state => state.notes),
-        distinct()
-    ).subscribe(notes => {
-        while (list.hasChildNodes()) {
-            list.lastChild.remove();
+    const deleteBtn = element.querySelector('a');
+    deleteBtn.addEventListener('click', event => {
+        event.preventDefault();
+        onDelete();
+    });
+
+    const titleElement = element.querySelector('div[class="title"]') as HTMLElement;
+    const descriptionElement = element.querySelector('div[class="description"]') as HTMLElement;
+
+    titleElement.innerText = note.title;
+    descriptionElement.innerText = note.description;
+
+    switch(note.color) {
+        case Notes.Color.Red:
+            element.classList.add('red');
+            break;
+        case Notes.Color.Green:
+            element.classList.add('green');
+            break;
+        case Notes.Color.Blue:
+            element.classList.add('blue');
+            break;
+    }
+
+    return element;
+}
+
+function createNoteList(noteSource: Observable<Notes.Note[]>, onDeleteNote: (id: number) => void): HTMLElement {
+    const element = document.createElement('div');
+    element.classList.add('note-list');
+
+    noteSource.subscribe(notes => {
+        while (element.hasChildNodes()) {
+            element.lastChild.remove();
         }
         for (let note of notes) {
-            const item = document.createElement('li');
-            switch (note.color) {
-                case Notes.Color.Red:
-                    item.setAttribute('style', 'color:red;');
-                    break;
-                case Notes.Color.Green:
-                    item.setAttribute('style', 'color:green;');
-                    break;
-                case Notes.Color.Blue:
-                    item.setAttribute('style', 'color:blue;');
-                    break;
-            }
-            item.innerHTML = `${note.title} [<a href="javascript:void(0)">X</a>]`;
-            item.querySelector('a').addEventListener('click', () => {
-                noteService.removeNote(note.id).then(() => {
-                    updateState(produce(state => {
-                        state.notes = state.notes.filter(n => n.id != note.id);
-                    }));
-                }).catch(onError);
-            });
-            list.appendChild(item);
+            const item = createNoteElement(note, () => onDeleteNote(note.id));
+            element.appendChild(item);
         }
     });
 
-    noteService.getNotes().then(notes => {
-        updateState(produce(state => {
-            state.notes = notes;
-        }));
-    }).catch(onError);
+    return element;
 }
 
-function configureTaskForm() {
-    const form: HTMLFormElement = document.querySelector('form');
+function createNoteForm(errorSource: Observable<string>, onAddNote: (title: string, description: string, color: Notes.Color) => void): HTMLElement {
+    const element = document.createElement('form');
+    element.classList.add('note');
+    element.innerHTML = `
+        <input class="title" type="text" name="title" placeholder="Title" required/>
+        <select class="color" name="color" required>
+            <option value="">[Color]</option>
+            <option value="red">Red</option>
+            <option value="green">Green</option>
+            <option value="blue">Blue</option>
+        </select>
+        <textarea class="description" name="description" placeholder="Description" required></textarea>
+        <p hidden style="color: red;"></p>
+        <input class="addtask" type="submit" value="Add task"/>
+    `;
     
-    const errorLabel = form.querySelector('p');
-    stateChange.pipe(
-        map(state => state.error),
-        distinct()
-    ).subscribe(error => {
+    const errorLabel = element.querySelector('p');
+    errorSource.subscribe(error => {
         if (error) {
             errorLabel.removeAttribute('hidden');
         } else {
@@ -95,20 +118,43 @@ function configureTaskForm() {
         errorLabel.innerText = error ?? '';
     });
     
-    form.addEventListener('submit', e => {
+    element.addEventListener('submit', e => {
         e.preventDefault();
 
-        const title = (<HTMLInputElement>(<unknown>form.title)).value;
-        const description = form.description.value;
-        const color = colorValues[(<HTMLSelectElement>form.color).value] ?? Notes.Color.Blue;
+        const title = (<HTMLInputElement>(<unknown>element.title)).value;
+        const description = element.description.value;
+        const color = colorValues[(<HTMLSelectElement>element.color).value] ?? Notes.Color.Blue;
 
-        noteService.addNote(title, description, color).then(note => {
-            updateState(produce(state => {
-                state.notes.push(note);
-            }));
-        }).catch(onError);
+        onAddNote(title, description, color);
     });
+
+    return element;
 }
 
-configureNoteList();
-configureTaskForm();
+const noteList = createNoteList(
+    stateChange.pipe(map(state => state.notes), distinct()),
+    id => {
+        noteService.removeNote(id).then(() => {
+            updateState(produce(state => {
+                state.notes = state.notes.filter(note => note.id != id);
+            }));
+        }).catch(onError);
+    }
+);
+const form = createNoteForm(
+    stateChange.pipe(map(state => state.error), distinct()),
+    (title, description, color) => {
+        noteService.addNote(title, description, color).then(newNote => {
+            updateState(produce(state => {
+                state.notes.push(newNote);
+            }));
+        }).catch(onError);
+    }
+);
+document.getElementById('app').append(noteList, form);
+
+noteService.getNotes().then(notes => {
+    updateState(produce(state => {
+        state.notes = notes;
+    }));
+}).catch(onError);

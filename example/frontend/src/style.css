@@ -1,3 +1,89 @@
 body {
-    background-color: beige;
+    background-color: #f5f5dc;
+}
+
+.container {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 480px;
+}
+
+.container > h1 {
+    text-align: center;
+}
+
+.note {
+    margin: 1em;
+    padding: 0.75em;
+
+    box-shadow: 0px 0px 10px grey;
+
+    display: grid;
+    grid-template-areas:
+        'title delete'
+        'description description';
+    grid-template-columns: 1fr 0fr;
+}
+.note.red {
+    background-color: rgb(255, 115, 115);
+}
+.note.green {
+    background-color: rgb(77, 175, 77);
+}
+.note.blue {
+    background-color: #4d6dff;
+}
+
+.note > .title {
+    grid-area: title;
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.note > .delete-button {
+    grid-area: delete;
+}
+.note > .delete-button > a {
+    text-decoration: none;
+    color: #444444;
+    font-size: 1.25em;
+}
+.note > .delete-button > a:hover {
+    color: #222222;
+}
+
+.note > .description {
+    grid-area: description;
+}
+
+.note > .color {
+    grid-area: color;
+}
+
+.note > .addtask {
+    grid-area: addtask;
+
+    background-color: #ffff94;
+
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+    
+    padding: 0.5em;
+}
+
+form.note {
+    grid-template-areas:
+        'title color'
+        'description description'
+        'empty addtask';
+    grid-template-columns: 1fr 0.25fr;
+}
+
+form.note > .title {
+    width: 100%;
+}
+
+form.note > .description {
+    margin-top: 1em;
+    resize: vertical;
 }
